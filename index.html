@@ -1,0 +1,528 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Play, Pause, BookOpen, Brain, Activity, Volume2, Upload, ChevronRight, RefreshCw, Wind, Video, Sparkles, ScrollText, Lightbulb, AlertCircle, FileVideo } from 'lucide-react';
+
+const TaoTeChingAppFinal = () => {
+  const [activeTab, setActiveTab] = useState('analysis');
+  
+  // 預設檔案名稱，請確保您的影片檔名與此一致
+  const defaultFileName = "視頻抽取-老子智慧第一節.mp4";
+  
+  const [mediaSrc, setMediaSrc] = useState(defaultFileName);
+  const [mediaType, setMediaType] = useState('video'); 
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [mediaError, setMediaError] = useState(false); // 用於檢測預設影片是否存在
+  const mediaRef = useRef(null);
+
+  // 處理檔案上傳（備用方案）
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setMediaSrc(url);
+      setMediaType(file.type.startsWith('video') ? 'video' : 'audio');
+      setIsPlaying(false);
+      setMediaError(false); // 重置錯誤狀態
+    }
+  };
+
+  const togglePlay = () => {
+    if (mediaRef.current) {
+      if (isPlaying) {
+        mediaRef.current.pause();
+      } else {
+        mediaRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleMediaPlay = () => setIsPlaying(true);
+  const handleMediaPause = () => setIsPlaying(false);
+  
+  // 當影片載入失敗（例如同目錄下沒找到檔案）
+  const handleMediaError = () => {
+    setMediaError(true);
+    setIsPlaying(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#f7f5f0] text-stone-800 font-sans selection:bg-stone-300 flex flex-col">
+      
+      {/* 頂部控制列 */}
+      <div className="bg-stone-900 text-[#f7f5f0] p-4 sticky top-0 z-50 shadow-lg shrink-0">
+        <div className="max-w-3xl mx-auto flex flex-col gap-4">
+          
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-xl font-bold font-serif tracking-widest">老子智慧 · 第一章</h1>
+              <p className="text-xs text-stone-400">木清解讀 · 帛書版</p>
+            </div>
+            
+            {/* 這裡依然保留手動上傳，以防自動載入失敗 */}
+            <label className="flex items-center gap-2 bg-stone-800 hover:bg-stone-700 px-3 py-1.5 rounded-full cursor-pointer transition-colors text-xs border border-stone-600 group">
+              <Upload size={14} className="group-hover:text-[#d4cda5] transition-colors"/>
+              <span className="group-hover:text-white transition-colors">手動選擇檔案</span>
+              <input type="file" accept="audio/*,video/*" onChange={handleFileUpload} className="hidden" />
+            </label>
+          </div>
+
+          {/* 音訊模式下的迷你播放器 */}
+          {mediaType === 'audio' && !mediaError && (
+            <div className="bg-stone-800 rounded-lg p-3 flex items-center gap-4 border border-stone-700">
+              <button 
+                onClick={togglePlay}
+                disabled={mediaError}
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${!mediaError ? 'bg-[#d4cda5] text-stone-900 hover:bg-[#e8e4cc]' : 'bg-stone-700 text-stone-500 cursor-not-allowed'}`}
+              >
+                {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-1" />}
+              </button>
+              <div className="flex-1 overflow-hidden">
+                <div className="flex flex-col gap-1 w-full">
+                  <span className="text-xs text-[#d4cda5] font-medium truncate">正在播放音訊模式</span>
+                  <audio 
+                    ref={mediaRef} 
+                    src={mediaSrc} 
+                    onError={handleMediaError}
+                    onPlay={handleMediaPlay}
+                    onPause={handleMediaPause}
+                    onEnded={() => setIsPlaying(false)} 
+                    className="w-full h-8 opacity-70" 
+                    controls 
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 主要內容區域 */}
+      <div className="max-w-3xl mx-auto w-full p-4 pb-20 flex-grow">
+        
+        {/* 影片播放區域 */}
+        {mediaType === 'video' && (
+          <div className="mb-6 rounded-xl overflow-hidden shadow-xl bg-black aspect-video relative group animate-in fade-in slide-in-from-top-4 duration-500 border border-stone-800">
+            {!mediaError ? (
+              <video 
+                ref={mediaRef}
+                src={mediaSrc}
+                onError={handleMediaError}
+                onPlay={handleMediaPlay}
+                onPause={handleMediaPause}
+                onEnded={() => setIsPlaying(false)}
+                className="w-full h-full object-contain"
+                controls
+              />
+            ) : (
+              // 錯誤狀態顯示（指導用戶如何放置檔案）
+              <div className="w-full h-full flex flex-col items-center justify-center text-stone-400 p-6 text-center bg-stone-900">
+                <AlertCircle size={48} className="mb-4 text-stone-600" />
+                <h3 className="text-lg font-bold text-stone-200 mb-2">未檢測到影片檔案</h3>
+                <p className="text-sm max-w-md leading-relaxed mb-4">
+                  請確保將本 App 與影片檔放在<span className="text-[#d4cda5] font-bold">同一個資料夾</span>內，<br/>
+                  並將影片命名為：<br/>
+                  <code className="bg-stone-800 px-2 py-1 rounded text-[#d4cda5] mt-2 inline-block select-all">{defaultFileName}</code>
+                </p>
+                <div className="flex items-center gap-2 text-xs text-stone-500">
+                  <span>或是您可以</span>
+                  <label className="text-[#d4cda5] hover:underline cursor-pointer">
+                    手動上傳檔案
+                    <input type="file" accept="audio/*,video/*" onChange={handleFileUpload} className="hidden" />
+                  </label>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 導航標籤 */}
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+          <NavButton active={activeTab === 'analysis'} onClick={() => setActiveTab('analysis')} icon={<Sparkles size={18} />} label="AI 智慧導讀" />
+          <NavButton active={activeTab === 'study'} onClick={() => setActiveTab('study')} icon={<BookOpen size={18} />} label="義理精講" />
+          <NavButton active={activeTab === 'quiz'} onClick={() => setActiveTab('quiz')} icon={<Brain size={18} />} label="悟道測驗" />
+          <NavButton active={activeTab === 'meditate'} onClick={() => setActiveTab('meditate')} icon={<Wind size={18} />} label="內觀修心" />
+        </div>
+
+        {/* 內容渲染 */}
+        <div className="transition-opacity duration-300 min-h-[400px]">
+          {activeTab === 'analysis' && <AnalysisSection />}
+          {activeTab === 'study' && <StudySection />}
+          {activeTab === 'quiz' && <QuizSection />}
+          {activeTab === 'meditate' && <MeditationSection />}
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+// --- 子組件 ---
+
+const NavButton = ({ active, onClick, icon, label }) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex-shrink-0 ${
+      active 
+        ? 'bg-stone-800 text-[#f7f5f0] shadow-md transform scale-105' 
+        : 'bg-white text-stone-600 hover:bg-stone-200 border border-stone-200'
+    }`}
+  >
+    {icon}
+    {label}
+  </button>
+);
+
+const AnalysisSection = () => {
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500">
+      
+      {/* 課程概述 */}
+      <div className="bg-gradient-to-br from-stone-800 to-stone-700 text-stone-100 p-6 rounded-2xl shadow-lg">
+        <div className="flex items-start gap-3 mb-3">
+          <Sparkles className="text-[#d4cda5] mt-1 flex-shrink-0" size={24} />
+          <div>
+            <h2 className="text-xl font-bold font-serif mb-2 text-[#d4cda5]">本節課核心 AI 分析</h2>
+            <p className="text-sm leading-relaxed text-stone-300">
+              本節課木清老師深度解讀《道德經》第一章，強調對「道」與「名」的理解應基於感受與變化，引導聽眾從內在覺知出發，認識自我天賦，走向無為而治的人生境界。
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        
+        {/* 歷史背景與版本 */}
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-stone-200">
+          <div className="flex items-center gap-2 mb-3 border-b border-stone-100 pb-2">
+            <ScrollText size={18} className="text-stone-600" />
+            <h3 className="font-bold text-stone-800">歷史背景與版本</h3>
+          </div>
+          <ul className="space-y-3 text-sm text-stone-600">
+            <li className="flex gap-2">
+              <span className="font-bold text-stone-800 min-w-[4rem]">老子地位：</span>
+              <span>東周典藏史（國家圖書館館長），帝王之師。孔子曾三問其道。</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold text-stone-800 min-w-[4rem]">三家文化：</span>
+              <span>道家為「帝者之學」，儒家為「士大夫之學」，佛家為「百姓之事」。</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold text-stone-800 min-w-[4rem]">帛書版：</span>
+              <span>推崇1973年馬王堆出土版本，未受儒家篡改，更接近老子原意。</span>
+            </li>
+          </ul>
+        </div>
+
+        {/* 核心經文解析 */}
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-stone-200">
+          <div className="flex items-center gap-2 mb-3 border-b border-stone-100 pb-2">
+            <Lightbulb size={18} className="text-stone-600" />
+            <h3 className="font-bold text-stone-800">「道」與「名」的辯證</h3>
+          </div>
+          <div className="space-y-4 text-sm">
+            <div>
+              <span className="block font-bold text-stone-800 mb-1">道可道也，非恆道也</span>
+              <p className="text-stone-600">「可」字由「丁」（權杖）+「口」組成，意為感知。道是可以被感知的，但這種感知隨心境和年齡流變（如對父母之愛的理解）。</p>
+            </div>
+            <div>
+              <span className="block font-bold text-stone-800 mb-1">名可名也，非恆名也</span>
+              <p className="text-stone-600">名（定義）源於主觀感受，並非永恆。如唐朝以胖為美；青樓女子在救國時即為英雄。不應活在他人流變的評價中。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 無與有：哲學核心 */}
+      <div className="bg-[#e8e4cc]/50 p-6 rounded-xl border border-[#d4cda5]">
+        <h3 className="font-bold text-stone-800 mb-4 flex items-center gap-2">
+          <Activity size={18} />
+          <span>無與有：生命的雙重奏</span>
+        </h3>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <h4 className="font-bold text-stone-900 mb-2">無（萬物之始）</h4>
+            <p className="text-sm text-stone-700 mb-2">
+              如同孕婦腹中胎兒，雖不可見卻已蘊含潛能。是先天的存在，是頂層設計。
+            </p>
+            <div className="bg-white/60 p-2 rounded text-xs text-stone-600">
+              <span className="font-bold">無欲：</span>回歸先天本真慾望，覺察天賦使命。
+            </div>
+          </div>
+          <div>
+            <h4 className="font-bold text-stone-900 mb-2">有（萬物之母）</h4>
+            <p className="text-sm text-stone-700 mb-2">
+              如同孩子出生，顯化於世。是後天的表現與執行。
+            </p>
+            <div className="bg-white/60 p-2 rounded text-xs text-stone-600">
+              <span className="font-bold">有欲：</span>觀察事物在外在世界的邊界與反應。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 無為的三層含義 */}
+      <div className="bg-white p-5 rounded-xl shadow-sm border border-stone-200">
+        <h3 className="font-bold text-stone-800 mb-3 border-b pb-2">「無為」並非躺平</h3>
+        <p className="text-sm text-stone-600 mb-4">真正的無為是依循「萬物之始」（天賦/規律）進行頂層設計：</p>
+        <div className="grid grid-cols-3 gap-2 text-center text-sm">
+          <div className="bg-stone-50 p-3 rounded-lg border border-stone-100">
+            <div className="font-bold text-stone-800 mb-1">個人</div>
+            <div className="text-xs text-stone-500">發現並踐行天賦</div>
+          </div>
+          <div className="bg-stone-50 p-3 rounded-lg border border-stone-100">
+            <div className="font-bold text-stone-800 mb-1">企業家</div>
+            <div className="text-xs text-stone-500">制定戰略方向</div>
+          </div>
+          <div className="bg-stone-50 p-3 rounded-lg border border-stone-100">
+            <div className="font-bold text-stone-800 mb-1">帝王</div>
+            <div className="text-xs text-stone-500">治理天下佈局</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 總結 */}
+      <div className="bg-stone-100 p-5 rounded-xl border-l-4 border-stone-600 italic text-stone-700 text-sm">
+        <span className="font-bold not-italic text-stone-900 block mb-1">核心啟示：</span>
+        「玄之又玄，眾妙之門」。修行如螺旋上升，真正的理解來自內在修為的積累。人生應追求內在覺醒，識別並發展自身天賦，擺脫外界干擾，實現由內而外的成長與自由。
+      </div>
+
+    </div>
+  );
+};
+
+const StudySection = () => {
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500">
+      {/* 核心經文 */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-stone-800">
+        <h2 className="text-lg font-serif font-bold mb-4 text-stone-900 border-b pb-2">帛書版 · 道德經第一章</h2>
+        <div className="text-xl md:text-2xl font-serif leading-relaxed text-stone-800 space-y-4">
+          <p>道可道也，非恆道也。</p>
+          <p>名可名也，非恆名也。</p>
+          <p>無名萬物之始也；有名萬物之母也。</p>
+          <p>故恆無欲也，以觀其妙；</p>
+          <p>恆有欲也，以觀其所徼。</p>
+          <p>兩者同出，異名同謂。</p>
+          <p>玄之又玄，眾妙之門。</p>
+        </div>
+      </div>
+
+      {/* 深度解讀 Cards */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <ConceptCard 
+          title="「可」字的真意" 
+          subtitle="丁 (權杖) + 口 (說話/吟唱)"
+          content="在講座中，木清老師強調「可」不僅僅是「可以」，它由「丁」（權杖/祭祀）和「口」組成。它代表了一種向上天的祈求、感知和感覺。道，是來自於你的「感受」和「覺知」。"
+          color="bg-[#e8e4cc]"
+        />
+        <ConceptCard 
+          title="非恆道與非恆名" 
+          subtitle="變化是永恆的"
+          content="所有的定義（名）和感受（道）都不是一成不變的。如同父愛母愛隨年齡理解不同，如同「胖」在唐朝代表美。不要活在別人的評價（名）裡，因為那只是他人暫時的、主觀的感受。"
+          color="bg-[#dcdcdc]"
+        />
+        <ConceptCard 
+          title="無與有" 
+          subtitle="始 (胚胎) vs 母 (落地)"
+          content="「無」不是沒有，而是「萬物之始」，如同孕婦腹中的胎兒，看不見但真實存在（含藏）。「有」是「萬物之母」，如同孩子落地，顯化於世。無是裡（天賦/頂層設計），有是表（職業/執行）。"
+          color="bg-[#dcdcdc]"
+        />
+        <ConceptCard 
+          title="無欲 vs 有欲" 
+          subtitle="內求 vs 外求"
+          content="無欲：回到先天的狀態，閉目（少一筆）觀其妙，尋找天賦和本心。有欲：觀察後天的邊界（徼/叫），即在社會中的表現。我們要透過表象（有欲）去看到本質（無欲）。"
+          color="bg-[#e8e4cc]"
+        />
+      </div>
+    </div>
+  );
+};
+
+const ConceptCard = ({ title, subtitle, content, color }) => (
+  <div className={`${color} p-5 rounded-xl shadow-sm hover:shadow-md transition-shadow`}>
+    <h3 className="font-bold text-stone-800 text-lg mb-1">{title}</h3>
+    <p className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-3">{subtitle}</p>
+    <p className="text-stone-700 text-sm leading-relaxed text-justify">{content}</p>
+  </div>
+);
+
+const QuizSection = () => {
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [showAnswer, setShowAnswer] = useState(false);
+
+  const questions = [
+    {
+      q: "根據木清老師的解讀，老子為什麼能寫出《道德經》？",
+      options: [
+        "因為道完全可以用語言說清楚",
+        "這是一個邏輯悖論，傳統解釋「道不可言說」是錯的，道是可以被「感受」和「覺知」的",
+        "因為他是圖書管理員，書看很多",
+      ],
+      correct: 1,
+      explanation: "老師指出，如果道不可言說，老子就不可能寫出來。「可」在這裡代表「感知、感覺」。道是可以被感知到的。"
+    },
+    {
+      q: "講座中提到「無」（無名）對應的是什麼狀態？",
+      options: [
+        "徹底的虛無，什麼都沒有",
+        "萬物之母，顯化的狀態",
+        "萬物之始，如同孕婦腹中的胎兒（看不見但包含所有）",
+      ],
+      correct: 2,
+      explanation: "「無」等於「萬物之始」。就像禿頭的人雖然表面沒頭髮，但毛囊還在。它代表先天的、含藏的狀態，或者頂層設計。"
+    },
+    {
+      q: "朱元璋如何評價《道德經》？",
+      options: [
+        "也沒什麼特別的，只是一本古書",
+        "王者之上師，臣民之極寶，萬物之根",
+        "只是一本普通的哲學書",
+      ],
+      correct: 1,
+      explanation: "朱元璋經歷了從乞丐到皇帝的跨度，深刻體會《道德經》是「王者之上師，臣民之極寶，萬物之根」。"
+    },
+    {
+      q: "什麼是真正的「無為」？",
+      options: [
+        "什麼都不做，躺平",
+        "按照先天的天賦和頂層設計去作為",
+        "隨波逐流",
+      ],
+      correct: 1,
+      explanation: "講座強調，「無」是萬物之始（頂層設計/天賦）。無為不是不為，而是找到自己的天賦（先天使命），順應它去努力，不做無謂的內耗。"
+    }
+  ];
+
+  const handleNext = () => {
+    setShowAnswer(false);
+    setCurrentQuestion((prev) => (prev + 1) % questions.length);
+  };
+
+  const q = questions[currentQuestion];
+
+  return (
+    <div className="flex flex-col items-center justify-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="w-full bg-white rounded-2xl shadow-lg overflow-hidden border border-stone-200">
+        <div className="bg-stone-800 p-4 text-[#f7f5f0] flex justify-between items-center">
+          <span className="font-bold">悟道測驗</span>
+          <span className="text-sm opacity-70">第 {currentQuestion + 1} / {questions.length} 題</span>
+        </div>
+        
+        <div className="p-6 md:p-8">
+          <h3 className="text-xl font-bold text-stone-800 mb-6 leading-snug">{q.q}</h3>
+          
+          <div className="space-y-3">
+            {q.options.map((opt, idx) => (
+              <button
+                key={idx}
+                onClick={() => setShowAnswer(true)}
+                disabled={showAnswer}
+                className={`w-full text-left p-4 rounded-xl border transition-all ${
+                  showAnswer 
+                    ? idx === q.correct 
+                      ? 'bg-green-100 border-green-500 text-green-800' 
+                      : 'bg-stone-50 border-stone-200 text-stone-400'
+                    : 'hover:bg-stone-50 border-stone-200 text-stone-700'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`mt-0.5 w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 text-xs ${
+                    showAnswer && idx === q.correct ? 'bg-green-500 border-green-500 text-white' : 'border-stone-400 text-stone-500'
+                  }`}>
+                    {String.fromCharCode(65 + idx)}
+                  </div>
+                  <span>{opt}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {showAnswer && (
+            <div className="mt-6 p-4 bg-[#e8e4cc] rounded-lg text-stone-800 border-l-4 border-stone-600 animate-in fade-in slide-in-from-bottom-2">
+              <p className="font-bold text-sm mb-1">解析：</p>
+              <p>{q.explanation}</p>
+              <div className="mt-4 flex justify-end">
+                <button 
+                  onClick={handleNext}
+                  className="flex items-center gap-2 bg-stone-800 text-white px-4 py-2 rounded-lg hover:bg-stone-700 transition-colors"
+                >
+                  下一題 <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const MeditationSection = () => {
+  const [seconds, setSeconds] = useState(0);
+  const [active, setActive] = useState(false);
+
+  useEffect(() => {
+    let interval = null;
+    if (active) {
+      interval = setInterval(() => {
+        setSeconds(s => s + 1);
+      }, 1000);
+    } else {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [active]);
+
+  return (
+    <div className="flex flex-col items-center py-10 animate-in fade-in duration-700">
+      <div className="text-center mb-8 max-w-md">
+        <h3 className="text-2xl font-serif font-bold text-stone-800 mb-2">故恆無欲也，以觀其妙</h3>
+        <p className="text-stone-600 leading-relaxed">
+          講座中提到，「妙」字是「少了一隻眼睛」。<br/>
+          請閉上眼睛，屏蔽外界（有欲）的干擾，<br/>
+          向內觀照自己的初心與天賦（無欲）。
+        </p>
+      </div>
+
+      <div className="relative w-64 h-64 flex items-center justify-center">
+        {/* Breathing Animation Circles */}
+        {active && (
+          <>
+            <div className="absolute w-full h-full rounded-full bg-[#d4cda5] opacity-20 animate-ping duration-[4000ms]"></div>
+            <div className="absolute w-48 h-48 rounded-full bg-[#d4cda5] opacity-30 animate-pulse duration-[3000ms]"></div>
+          </>
+        )}
+        
+        <div className="relative z-10 bg-white w-40 h-40 rounded-full flex flex-col items-center justify-center shadow-lg border-4 border-[#e8e4cc]">
+          <span className="text-3xl font-serif font-bold text-stone-800">
+            {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}
+          </span>
+          <span className="text-xs text-stone-400 mt-1 uppercase tracking-widest">
+            {active ? '內觀中' : '準備'}
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-10 flex gap-4">
+        <button 
+          onClick={() => setActive(!active)}
+          className={`px-8 py-3 rounded-full text-lg font-medium transition-all ${
+            active 
+              ? 'bg-stone-200 text-stone-600' 
+              : 'bg-stone-800 text-[#f7f5f0] hover:scale-105 shadow-lg'
+          }`}
+        >
+          {active ? '暫停' : '開始靜心'}
+        </button>
+        <button 
+          onClick={() => { setActive(false); setSeconds(0); }}
+          className="p-3 rounded-full bg-white border border-stone-200 text-stone-500 hover:bg-stone-100 transition-colors"
+        >
+          <RefreshCw size={20} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default TaoTeChingAppFinal;
